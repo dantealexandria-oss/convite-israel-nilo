@@ -59,8 +59,8 @@
   --terracotta-dim: #9c3313;
   --gold: #EF9F1C;
   --gold-bright: #FFC145;
-  --olive: #4B6B2E;
-  --olive-dim: #35491f;
+  --olive: #5E8C36;
+  --olive-dim: #3f6527;
   --dusk: #2C1D14;
   --ink: #2C1D14;
   --ink-soft: #5c4a3a;
@@ -303,8 +303,6 @@ body {
 /* Ticket / countdown */
 
 .ticket {
-  display: flex;
-  align-items: stretch;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -332,43 +330,41 @@ body {
   margin: 0;
 }
 
-.ticket-stub {
-  width: 108px;
-  flex-shrink: 0;
-  background: repeating-linear-gradient(
-    var(--olive),
-    var(--olive) 6px,
-    transparent 6px,
-    transparent 12px
-  );
-  -webkit-mask-image: none;
-  border-left: 2px dashed var(--line);
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 0 1.1rem 1.25rem;
+}
+
+.countdown-unit {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
-  padding: 0.6rem 0.4rem;
-  background-color: var(--olive);
+  gap: 0.2rem;
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.65rem 0.3rem;
 }
 
-.stub-num {
+.countdown-num {
   font-family: 'Archivo', sans-serif;
   font-weight: 700;
-  font-size: 1.9rem;
-  color: var(--sand-2);
+  font-size: 1.5rem;
+  color: var(--terracotta);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
-.stub-label {
+.countdown-label {
   font-family: 'Archivo', sans-serif;
   font-weight: 600;
-  font-size: 0.6rem;
-  letter-spacing: 0.14em;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--sand-2);
-  opacity: 0.85;
+  color: var(--ink-soft);
 }
 
 /* Details grid */
@@ -440,7 +436,7 @@ body {
 /* RSVP */
 
 .rsvp-card {
-  background: linear-gradient(165deg, var(--olive) 0%, var(--olive-dim) 100%);
+  background: linear-gradient(155deg, var(--terracotta) 0%, var(--terracotta-dim) 100%);
   border-radius: 18px;
   padding: 1.6rem 1.4rem 1.5rem;
   color: var(--sand-2);
@@ -485,7 +481,7 @@ body {
   padding: 0.75rem 0.85rem;
   border-radius: 10px;
   border: 1px solid rgba(244, 231, 204, 0.35);
-  background: rgba(44, 29, 20, 0.25);
+  background: rgba(60, 20, 8, 0.22);
   color: var(--sand-2);
   font-family: 'Archivo', sans-serif;
   font-size: 0.98rem;
@@ -499,7 +495,7 @@ body {
 .field input:focus,
 .field select:focus {
   border-color: var(--gold-bright);
-  background: rgba(44, 29, 20, 0.4);
+  background: rgba(60, 20, 8, 0.36);
 }
 
 .field-row { display: flex; gap: 0.7rem; }
@@ -619,9 +615,23 @@ footer {
           <p class="ticket-date">Dom · 23 de agosto</p>
           <p class="ticket-sub">11h às 18h &nbsp;·&nbsp; 2026</p>
         </div>
-        <div class="ticket-stub">
-          <span class="stub-num" id="countdown-num">—</span>
-          <span class="stub-label" id="countdown-label">dias</span>
+        <div class="countdown-grid">
+          <div class="countdown-unit">
+            <span class="countdown-num" id="cd-days">00</span>
+            <span class="countdown-label">dias</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-num" id="cd-hours">00</span>
+            <span class="countdown-label">horas</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-num" id="cd-min">00</span>
+            <span class="countdown-label">min</span>
+          </div>
+          <div class="countdown-unit">
+            <span class="countdown-num" id="cd-sec">00</span>
+            <span class="countdown-label">seg</span>
+          </div>
         </div>
       </div>
     </div>
@@ -648,7 +658,7 @@ footer {
       <div class="rsvp-card">
         <p class="section-label">Confirmação</p>
         <p class="rsvp-title">Você vem?</p>
-        <p class="rsvp-copy">Preenche rapidinho — sua confirmação nos ajuda a acertar a quantidade certa de comida pra todo mundo. Ao tocar em confirmar, abre o WhatsApp com uma mensagem pronta pra você só enviar.</p>
+        <p class="rsvp-copy">Preenche rapidinho — sua confirmação nos ajuda a preparar tudo com carinho pra te receber direitinho. Ao tocar em confirmar, abre o WhatsApp com uma mensagem pronta pra você só enviar.</p>
 
         <form id="rsvp-form" novalidate>
           <div class="field">
@@ -722,28 +732,33 @@ footer {
 
   // Countdown
   var target = new Date('2026-08-23T11:00:00-03:00').getTime();
+  var cdDays = document.getElementById('cd-days');
+  var cdHours = document.getElementById('cd-hours');
+  var cdMin = document.getElementById('cd-min');
+  var cdSec = document.getElementById('cd-sec');
+
+  function pad(n) { return String(n).length < 2 ? '0' + n : String(n); }
+
   function updateCountdown() {
-    var now = Date.now();
-    var diff = target - now;
-    var numEl = document.getElementById('countdown-num');
-    var labelEl = document.getElementById('countdown-label');
+    var diff = target - Date.now();
     if (diff <= 0) {
-      numEl.textContent = '🎉';
-      labelEl.textContent = 'é hoje!';
+      cdDays.textContent = '🎉';
+      cdHours.textContent = '';
+      cdMin.textContent = '';
+      cdSec.textContent = '';
       return;
     }
     var days = Math.floor(diff / 86400000);
-    if (days >= 1) {
-      numEl.textContent = days;
-      labelEl.textContent = days === 1 ? 'dia' : 'dias';
-    } else {
-      var hours = Math.floor(diff / 3600000);
-      numEl.textContent = hours;
-      labelEl.textContent = hours === 1 ? 'hora' : 'horas';
-    }
+    var hours = Math.floor((diff % 86400000) / 3600000);
+    var mins = Math.floor((diff % 3600000) / 60000);
+    var secs = Math.floor((diff % 60000) / 1000);
+    cdDays.textContent = pad(days);
+    cdHours.textContent = pad(hours);
+    cdMin.textContent = pad(mins);
+    cdSec.textContent = pad(secs);
   }
   updateCountdown();
-  setInterval(updateCountdown, 60000);
+  setInterval(updateCountdown, 1000);
 
   // Reveal on scroll
   var revealEls = document.querySelectorAll('.reveal');
